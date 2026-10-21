@@ -34,6 +34,10 @@ export const en = {
   "step.results": "Prices",
   "step.kendras": "Kendras",
   "step.print": "Print",
+  "nav.home": "Home",
+  "nav.check": "Check",
+  "nav.kendras": "Kendras",
+  "nav.guide": "Guide",
   "home.h1": "Listed prices, before you pay",
   "home.lede":
     "This shows listed prices for medicines already named on a prescription. It does not give medical advice.",
@@ -51,6 +55,7 @@ export const en = {
     "Take a photo or upload a JPG, PNG, or WebP file. If reading fails, type the names. Typing does not need a connection.",
   "scan.choose": "Choose a photo",
   "scan.camera": "Take a photo",
+  "scan.handwriting": "Handwritten prescription",
   "scan.progress": "Reading the image",
   "scan.denied": "Camera permission was denied. You can upload a photo instead.",
   "scan.invalid": "Use a JPG, PNG, or WebP image.",

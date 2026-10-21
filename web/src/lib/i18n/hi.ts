@@ -39,6 +39,10 @@ export const hi: Record<MessageKey, string> = {
   "step.results": "कीमत",
   "step.kendras": "केंद्र",
   "step.print": "प्रिंट",
+  "nav.home": "होम",
+  "nav.check": "जाँच",
+  "nav.kendras": "केंद्र",
+  "nav.guide": "मार्गदर्शन",
   "home.h1": "भुगतान से पहले, सूचीबद्ध कीमत",
   "home.lede":
     "यह उन दवाओं की सूचीबद्ध कीमत दिखाता है जिनका नाम पर्ची पर पहले से है। यह चिकित्सकीय सलाह नहीं देता।",
@@ -55,6 +59,7 @@ export const hi: Record<MessageKey, string> = {
     "तस्वीर लें, या JPG, PNG, या WebP फ़ाइल चुनें। पढ़ना विफल हो तो नाम लिखें। लिखने के लिए इंटरनेट ज़रूरी नहीं।",
   "scan.choose": "तस्वीर चुनें",
   "scan.camera": "तस्वीर लें",
+  "scan.handwriting": "हस्तलिखित नुस्खा",
   "scan.progress": "तस्वीर पढ़ी जा रही है",
   "scan.denied": "कैमरे की अनुमति नहीं मिली। आप तस्वीर अपलोड कर सकते हैं।",
   "scan.invalid": "JPG, PNG, या WebP तस्वीर इस्तेमाल करें।",

@@ -22,11 +22,14 @@ export function ScanView({ provider }: { provider?: OcrProvider }) {
   const uploadRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const [reading, setReading] = useState(false);
+  const [handwriting, setHandwriting] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(null);
+  const generation = useRef(0);
   const h1 = t("scan.h1");
   const lede = t("scan.lede");
   const choose = t("scan.choose");
   const camera = t("scan.camera");
+  const handwritingLabel = t("scan.handwriting");
   const progress = t("scan.progress");
   const cancel = t("action.cancelScan");
   const retry = t("action.retry");
@@ -55,6 +58,9 @@ export function ScanView({ provider }: { provider?: OcrProvider }) {
       setFailure({ code, retryAfter: null });
       return;
     }
+    const mine = ++generation.current;
+    const useHandwriting = handwriting;
+    abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
     setReading(true);
@@ -63,8 +69,12 @@ export function ScanView({ provider }: { provider?: OcrProvider }) {
     const timeoutMs = parsedTimeout !== undefined && parsedTimeout >= 50 && parsedTimeout <= 25_000 ? parsedTimeout : undefined;
     const active = provider ?? createOcrProvider(kind(), timeoutMs);
     try {
-      const result = await active.readText(prepared.blob, { signal: controller.signal, lang });
-      if (controller.signal.aborted) return;
+      const result = await active.readText(prepared.blob, {
+        signal: controller.signal,
+        lang,
+        handwriting: useHandwriting,
+      });
+      if (mine !== generation.current || controller.signal.aborted) return;
       const catalog = loadBundledCatalog();
       const records = catalog.ok ? catalog.records : [];
       for (const line of linesFromOcr(result.text, result.candidates, records)) {
@@ -73,6 +83,7 @@ export function ScanView({ provider }: { provider?: OcrProvider }) {
       dispatch({ type: "setOcr", ocr: { text: result.text, mock: result.mock, provider: result.provider } });
       router.push("/review");
     } catch (error) {
+      if (mine !== generation.current) return;
       if (controller.signal.aborted && !(error instanceof OcrClientError)) return;
       if (error instanceof OcrClientError) {
         setFailure({ code: error.code, retryAfter: error.retryAfter });
@@ -80,8 +91,10 @@ export function ScanView({ provider }: { provider?: OcrProvider }) {
       }
       setFailure({ code: "NETWORK", retryAfter: null });
     } finally {
-      setReading(false);
-      abortRef.current = null;
+      if (mine === generation.current) {
+        setReading(false);
+        abortRef.current = null;
+      }
     }
   }
 
@@ -127,6 +140,15 @@ export function ScanView({ provider }: { provider?: OcrProvider }) {
           void readFile(file);
         }}
       />
+      <label className="check-row">
+        <input
+          type="checkbox"
+          checked={handwriting}
+          disabled={reading}
+          onChange={(event) => setHandwriting(event.target.checked)}
+        />
+        <span lang={handwritingLabel.locale}>{handwritingLabel.text}</span>
+      </label>
       <div className="actions">
         <button type="button" className="btn btn-primary" lang={camera.locale} disabled={reading} onClick={() => void openCamera()}>
           {camera.text}

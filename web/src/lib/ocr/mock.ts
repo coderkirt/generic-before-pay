@@ -1,10 +1,10 @@
 import { DISCLAIMER } from "@/lib/copy/approved";
-import { OCR_NOTICE, type OcrProvider, type OcrResult } from "@/lib/ocr/types";
+import { OCR_NOTICE, type OcrProvider, type OcrReadOptions, type OcrResult } from "@/lib/ocr/types";
 
 const MOCK_TEXT = "Calpol 500\nPantocid40";
 
 export class MockOcrProvider implements OcrProvider {
-  async readText(_image: Blob, opts: { signal: AbortSignal; lang?: "en" | "hi" }): Promise<OcrResult> {
+  async readText(_image: Blob, opts: OcrReadOptions): Promise<OcrResult> {
     if (opts.signal.aborted) {
       throw new DOMException("Aborted", "AbortError");
     }

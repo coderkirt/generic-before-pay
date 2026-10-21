@@ -1,5 +1,5 @@
 import { codeFromEnvelope, parseOcrBody, retryAfterSeconds } from "@/lib/ocr/errors";
-import { OCR_TIMEOUT_MS, OcrClientError, type OcrProvider, type OcrResult } from "@/lib/ocr/types";
+import { OCR_TIMEOUT_MS, OcrClientError, type OcrProvider, type OcrReadOptions, type OcrResult } from "@/lib/ocr/types";
 
 export class GemmaBackendProvider implements OcrProvider {
   constructor(
@@ -7,7 +7,7 @@ export class GemmaBackendProvider implements OcrProvider {
     private readonly timeoutMs = OCR_TIMEOUT_MS,
   ) {}
 
-  async readText(image: Blob, opts: { signal: AbortSignal; lang?: "en" | "hi" }): Promise<OcrResult> {
+  async readText(image: Blob, opts: OcrReadOptions): Promise<OcrResult> {
     const controller = new AbortController();
     const onAbort = () => controller.abort();
     opts.signal.addEventListener("abort", onAbort);
@@ -22,6 +22,7 @@ export class GemmaBackendProvider implements OcrProvider {
       body.append("file", image, "prescription.jpg");
       body.append("language", opts.lang ?? "en");
       body.append("preprocess", "true");
+      body.append("handwriting", opts.handwriting ? "true" : "false");
       const requestId = newRequestId();
       const response = await fetch(this.endpoint, {
         method: "POST",

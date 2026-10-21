@@ -36,8 +36,15 @@ export class OcrClientError extends Error {
   }
 }
 
+export type OcrReadOptions = {
+  signal: AbortSignal;
+  lang?: "en" | "hi";
+  /** Asks the OCR service to use the handwriting reader. Still unverified text. */
+  handwriting?: boolean;
+};
+
 export interface OcrProvider {
-  readText(image: Blob, opts: { signal: AbortSignal; lang?: "en" | "hi" }): Promise<OcrResult>;
+  readText(image: Blob, opts: OcrReadOptions): Promise<OcrResult>;
 }
 
 /** Fixed notice. Server notice text is not rendered, so a model cannot supply facts. */
