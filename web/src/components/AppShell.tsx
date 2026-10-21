@@ -61,6 +61,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <DisclaimerBlock />
         </div>
       </footer>
+      <nav className="site-nav no-print" aria-label={t("wordmark").text}>
+        <div className="shell-wrap site-nav-row">
+          <Link href="/" aria-current={pathname === "/" ? "page" : undefined} lang={t("nav.home").locale}>
+            {t("nav.home").text}
+          </Link>
+          <Link href="/scan" aria-current={pathname === "/scan" ? "page" : undefined} lang={t("nav.check").locale}>
+            {t("nav.check").text}
+          </Link>
+          <Link href="/kendras" aria-current={pathname === "/kendras" ? "page" : undefined} lang={t("nav.kendras").locale}>
+            {t("nav.kendras").text}
+          </Link>
+          <Link href="/#how" lang={t("nav.guide").locale}>
+            {t("nav.guide").text}
+          </Link>
+        </div>
+      </nav>
     </>
   );
 }

@@ -8,7 +8,7 @@ export function PrivacySlot() {
   const heading = t("privacy.heading");
   const pending = t("privacy.pending");
   return (
-    <section aria-labelledby="privacy-heading">
+    <section className="panel" aria-labelledby="privacy-heading">
       <h2 id="privacy-heading" lang={heading.locale}>
         {heading.text}
       </h2>

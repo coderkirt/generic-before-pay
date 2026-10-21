@@ -22,6 +22,7 @@ export function HomeView() {
 
   return (
     <div className="stack">
+      <section className="panel">
       <h1 lang={h1.locale}>{h1.text}</h1>
       <p className="lede" lang={lede.locale}>
         {lede.text}
@@ -47,7 +48,8 @@ export function HomeView() {
           {type.text}
         </button>
       </div>
-      <ol className="explain">
+      </section>
+      <ol className="explain" id="how">
         {steps.map(([titleKey, bodyKey]) => {
           const title = t(titleKey);
           const body = t(bodyKey);
