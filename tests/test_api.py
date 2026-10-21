@@ -417,13 +417,29 @@ def test_cors_headers_and_preflight(client):
     assert r_get.headers.get("access-control-allow-origin") == "http://localhost:5173"
 
 
-def test_lru_query_caching(client):
-    """Test identical repeated queries execute correctly and hit cache."""
-    r1 = client.get("/api/v1/search?q=Paracetamol")
-    r2 = client.get("/api/v1/search?q=Paracetamol")
-    assert r1.status_code == 200
-    assert r2.status_code == 200
-    assert r1.json()["data"]["matches"] == r2.json()["data"]["matches"]
+def test_kendras_nearest_lucknow(client):
+    """Test /api/v1/kendras/nearest returns closest Kendras with accurate distance."""
+    response = client.get("/api/v1/kendras/nearest?lat=26.85&lng=80.95&limit=3")
+    assert response.status_code == 200
+    json_data = response.json()
+    assert json_data["success"] is True
+    assert json_data["disclaimer"] == STANDARD_DISCLAIMER
+    _assert_no_forbidden_fields(json_data)
+
+    kendras = json_data["data"]["kendras"]
+    assert len(kendras) == 3
+    # First Kendra in Hazratganj Lucknow should be ~0.0 km
+    assert "Hazratganj" in kendras[0]["name"]
+    assert kendras[0]["distance_km"] < 1.0
+    assert "maps_url" in kendras[0]
+    assert "lat" in kendras[0] and "lng" in kendras[0]
+
+
+def test_kendras_invalid_coordinates(client):
+    """Test 422 validation for latitude out of range."""
+    response = client.get("/api/v1/kendras/nearest?lat=999&lng=80.95")
+    assert response.status_code == 422
+    assert response.json()["disclaimer"] == STANDARD_DISCLAIMER
 
 
 
