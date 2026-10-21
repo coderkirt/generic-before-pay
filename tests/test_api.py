@@ -233,7 +233,7 @@ def test_offline_data_version(client):
     assert response.status_code == 200
     json_data = response.json()
     assert json_data["success"] is True
-    assert json_data["data"]["total_records"] >= 80
+    assert json_data["data"]["total_records"] >= 200
     assert "dataset_hash" in json_data["data"]
     # Check deterministic content-based version prefix
     assert json_data["data"]["dataset_version"].startswith("v1.")
@@ -249,7 +249,7 @@ def test_offline_data_bundle_cache_control_and_etag(client):
 
     json_data = response.json()
     assert json_data["success"] is True
-    assert len(json_data["drugs"]) >= 80
+    assert len(json_data["drugs"]) >= 200
     assert json_data["disclaimer"] == STANDARD_DISCLAIMER
     _assert_no_forbidden_fields(json_data)
 
@@ -286,7 +286,7 @@ def test_dual_route_prefix(client):
 
     r_bundle = client.get("/api/data/version")
     assert r_bundle.status_code == 200
-    assert r_bundle.json()["data"]["total_records"] >= 80
+    assert r_bundle.json()["data"]["total_records"] >= 200
 
 
 def test_disclaimer_present_in_error_responses(client):
@@ -299,11 +299,11 @@ def test_disclaimer_present_in_error_responses(client):
     assert r_422.json()["disclaimer"] == STANDARD_DISCLAIMER
 
 
-def test_dataset_size_at_least_80_records(client):
+def test_dataset_size_at_least_200_records(client):
     response = client.get("/api/v1/data/version")
     assert response.status_code == 200
     total = response.json()["data"]["total_records"]
-    assert total >= 80, f"Dataset has only {total} records, expected at least 80!"
+    assert total >= 200, f"Dataset has only {total} records, expected at least 200!"
 
 
 def test_search_by_molecule_paracetamol(client):
