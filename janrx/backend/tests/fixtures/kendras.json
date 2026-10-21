@@ -1,0 +1,6 @@
+[
+  {"kendra_code": "K1", "name": "SYNTHETIC Kendra Near", "lat": 26.8500, "lng": 80.9500},
+  {"kendra_code": "K2", "name": "SYNTHETIC Kendra Mid", "lat": 26.9000, "lng": 80.9500},
+  {"kendra_code": "K3", "name": "SYNTHETIC Kendra Far", "lat": 27.2000, "lng": 80.9500},
+  {"kendra_code": "K4", "name": "SYNTHETIC Kendra Farthest", "lat": 28.6000, "lng": 77.2000}
+]

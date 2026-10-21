@@ -1,0 +1,6 @@
+[
+  {"brand_id": "b_alpha_40", "brand_name": "Testoprazole", "aliases": ["testoprazole 40"], "manufacturer": "SYNTHETIC", "composition_id": "testoprazole_40_tablet", "pack_size": 15, "pack_unit": "tablets", "mrp_inr": 150.0},
+  {"brand_id": "b_alpha_20", "brand_name": "Testoprazole", "aliases": ["testoprazole 20"], "manufacturer": "SYNTHETIC", "composition_id": "testoprazole_20_tablet", "pack_size": 15, "pack_unit": "tablets", "mrp_inr": 100.0},
+  {"brand_id": "b_beta", "brand_name": "Fakecillin", "aliases": [], "manufacturer": "SYNTHETIC", "composition_id": "fakecillin_500_capsule", "pack_size": 10, "pack_unit": "capsules", "mrp_inr": 200.0},
+  {"brand_id": "b_mm", "brand_name": "Mismatchol", "aliases": [], "manufacturer": "SYNTHETIC", "composition_id": "mismatchol_syrup", "pack_size": 10, "pack_unit": "tablets", "mrp_inr": 50.0}
+]
