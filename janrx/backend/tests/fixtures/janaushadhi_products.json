@@ -1,0 +1,5 @@
+[
+  {"ja_code": "SYN1", "generic_name": "SYNTHETIC Testoprazole 40 mg Tablets", "composition_id": "testoprazole_40_tablet", "pack_size": 10, "pack_unit": "tablets", "price_inr": 20.0, "source": "synthetic", "price_date": "2000-01-01"},
+  {"ja_code": "SYN2", "generic_name": "SYNTHETIC Testoprazole 40 mg Tablets (alt)", "composition_id": "testoprazole_40_tablet", "pack_size": 10, "pack_unit": "tablets", "price_inr": 30.0, "source": "synthetic", "price_date": "2000-01-01"},
+  {"ja_code": "SYN3", "generic_name": "SYNTHETIC Mismatchol Syrup", "composition_id": "mismatchol_syrup", "pack_size": 100, "pack_unit": "ml", "price_inr": 20.0, "source": "synthetic", "price_date": "2000-01-01"}
+]

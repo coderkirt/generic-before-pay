@@ -1,0 +1,8 @@
+---
+description: Project overview and safety rules for JanRx
+alwaysApply: true
+---
+- Read `AGENTS.md`, `docs/PRD.md`, and `docs/TASKS.md` before large changes.
+- Safety rules in AGENTS.md override convenience. If a request conflicts, stop and ask.
+- Never fabricate drug names, prices, strengths, uses, or Kendra locations in app code or data.
+- Synthetic test data lives only in `backend/tests/fixtures/` and must be clearly fake.

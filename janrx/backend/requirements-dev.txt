@@ -1,0 +1,4 @@
+-r requirements.txt
+pytest>=8.0
+rapidocr-onnxruntime==1.2.3
+numpy>=1.26

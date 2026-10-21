@@ -1,0 +1,14 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+node_modules/
+.next/
+*.log
+# never commit prescription images or real patient data
+uploads/
+backend/evals/boxes/*
+!backend/evals/boxes/README.md
+backend/evals/report.json
+.tmp_doctors_rx/

@@ -1,0 +1,39 @@
+name: backend
+
+on:
+  push:
+    paths:
+      - "backend/**"
+      - "data/**"
+      - "scripts/**"
+      - ".github/workflows/backend.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - "data/**"
+      - "scripts/**"
+      - ".github/workflows/backend.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -r requirements-dev.txt
+      - name: Tests
+        run: pytest -q
+      - name: Data validator
+        working-directory: .
+        run: |
+          if [ -f scripts/validate_data.py ]; then
+            python scripts/validate_data.py
+          else
+            echo "scripts/validate_data.py not written yet (BE-1); skipping"
+          fi

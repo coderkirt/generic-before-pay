@@ -1,0 +1,25 @@
+services:
+  backend:
+    build: ./backend
+    env_file: .env
+    environment:
+      DATA_DIR: /app/data
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/healthz').status==200 else 1)"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
