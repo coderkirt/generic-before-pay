@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
-const WIDTHS = [320, 360, 375, 390, 414, 768, 1024, 1280, 1440];
+const WIDTHS = [320, 360, 375, 390, 414, 480, 768, 834, 1024, 1280, 1440, 1920];
 const ROUTES = ["/", "/scan", "/review", "/patient", "/results", "/kendras", "/print"];
 
 async function openSession(page: Page) {
@@ -11,8 +11,8 @@ async function openSession(page: Page) {
 }
 
 test.describe("responsive, language, and accessibility", () => {
-  test("no horizontal overflow on the nine widths", async ({ page }) => {
-    test.setTimeout(180_000);
+  test("no horizontal overflow on the required widths", async ({ page }) => {
+    test.setTimeout(300_000);
     await openSession(page);
     for (const width of WIDTHS) {
       await page.setViewportSize({ width, height: 800 });
