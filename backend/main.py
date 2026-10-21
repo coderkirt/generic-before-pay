@@ -196,13 +196,19 @@ def get_drug_detail_endpoint(id: str):
 
 @api_router.post("/compare", response_model=CompareResponse)
 def compare_drugs_endpoint(payload: CompareRequest):
-    items = [{"id": it.id, "quantity": it.quantity} for it in payload.items]
+    items = []
+    if payload.items:
+        items.extend([{"id": it.id, "quantity": it.quantity} for it in payload.items])
+    if payload.ids:
+        items.extend([{"id": d_id, "quantity": 1} for d_id in payload.ids])
+
     result = calculate_compare(items)
     
     _log_event(
         "compare_basket",
-        item_count=len(payload.items),
-        total_savings=result["summary"]["total_savings"]
+        item_count=len(result["breakdown"]),
+        total_savings=result["summary"]["total_savings"],
+        skipped_count=len(result["summary"]["skipped_ids"])
     )
 
     return CompareResponse(
@@ -218,12 +224,14 @@ def compare_drugs_endpoint(payload: CompareRequest):
 @api_router.get("/data/version", response_model=DataVersionResponse)
 def get_data_version_endpoint():
     meta = get_dataset_metadata()
+    dataset_hash = meta.get("dataset_hash", DATASET_HASH)
+    dataset_version = f"v1.{dataset_hash[:8]}"
     return DataVersionResponse(
         success=True,
         data=DataVersionData(
             schema_version="1.0.0",
-            dataset_version=DATASET_VERSION,
-            dataset_hash=meta.get("dataset_hash", DATASET_HASH),
+            dataset_version=dataset_version,
+            dataset_hash=dataset_hash,
             total_records=int(meta.get("total_records", 0))
         )
     )
@@ -231,18 +239,29 @@ def get_data_version_endpoint():
 
 @api_router.get("/data/bundle", response_model=DataBundleResponse)
 def get_data_bundle_endpoint(request: Request, response: Response):
-    client_etag = request.headers.get("if-none-match")
-    if client_etag and client_etag.strip('"') == DATASET_HASH:
-        return Response(status_code=status.HTTP_304_NOT_MODIFIED)
+    meta = get_dataset_metadata()
+    dataset_hash = meta.get("dataset_hash", DATASET_HASH)
+    dataset_version = f"v1.{dataset_hash[:8]}"
 
-    response.headers["ETag"] = f'"{DATASET_HASH}"'
+    client_etag = request.headers.get("if-none-match")
+    if client_etag and client_etag.strip('"') == dataset_hash:
+        return Response(
+            status_code=status.HTTP_304_NOT_MODIFIED,
+            headers={
+                "ETag": f'"{dataset_hash}"',
+                "Cache-Control": "public, max-age=3600"
+            }
+        )
+
+    response.headers["ETag"] = f'"{dataset_hash}"'
+    response.headers["Cache-Control"] = "public, max-age=3600"
     all_drugs = get_all_drugs()
 
     return DataBundleResponse(
         success=True,
         metadata=DataBundleMetadata(
-            version=DATASET_VERSION,
-            dataset_hash=DATASET_HASH,
+            version=dataset_version,
+            dataset_hash=dataset_hash,
             record_count=len(all_drugs)
         ),
         drugs=[DrugDetailData(**d) for d in all_drugs],

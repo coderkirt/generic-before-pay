@@ -79,7 +79,8 @@ class CompareItemRequest(BaseModel):
 class CompareRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    items: List[CompareItemRequest] = Field(..., min_length=1)
+    items: Optional[List[CompareItemRequest]] = Field(default_factory=list)
+    ids: Optional[List[str]] = Field(default=None)
 
 
 class CompareSummary(BaseModel):
@@ -92,6 +93,7 @@ class CompareSummary(BaseModel):
     total_savings: float
     overall_savings_percentage: float
     currency: str = "INR"
+    skipped_ids: List[str] = Field(default_factory=list)
 
 
 class CompareBreakdownItem(BaseModel):

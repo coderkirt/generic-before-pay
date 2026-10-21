@@ -94,7 +94,7 @@ def fuzzy_search_drugs(
     query: str,
     drugs: Optional[List[Dict[str, Any]]] = None,
     limit: int = 3,
-    min_confidence: float = 0.40
+    min_confidence: float = 0.55
 ) -> List[Dict[str, Any]]:
     """
     Search drugs dataset by query with typo and partial match tolerance.

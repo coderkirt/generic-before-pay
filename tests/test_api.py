@@ -153,13 +153,79 @@ def test_compare_prescriptions(client):
     _assert_no_forbidden_fields(json_data)
 
 
-def test_compare_validation_error(client):
-    # Empty items list violates min_length=1
+def test_compare_empty_items_returns_200(client):
+    """Empty basket must return 200 with 0 totals and disclaimer, never 422 or 500."""
     response = client.post("/api/v1/compare", json={"items": []})
-    assert response.status_code == 422
+    assert response.status_code == 200
     json_data = response.json()
-    assert json_data["success"] is False
-    assert json_data["error"]["code"] == "VALIDATION_ERROR"
+    assert json_data["success"] is True
+    assert json_data["data"]["summary"]["total_items"] == 0
+    assert json_data["data"]["summary"]["total_savings"] == 0.0
+    assert json_data["data"]["breakdown"] == []
+    assert json_data["disclaimer"] == STANDARD_DISCLAIMER
+
+
+def test_compare_with_ids_array(client):
+    """Client can pass simple 'ids' array instead of 'items' objects."""
+    response = client.post("/api/v1/compare", json={"ids": ["paracetamol-500mg-tab", "metformin-500mg-tab"]})
+    assert response.status_code == 200
+    json_data = response.json()
+    assert json_data["success"] is True
+    assert json_data["data"]["summary"]["total_items"] == 2
+    assert json_data["data"]["summary"]["total_savings"] > 0
+
+
+def test_compare_duplicate_ids_merging(client):
+    """Duplicate IDs in request must merge quantities, not duplicate rows."""
+    payload = {
+        "items": [
+            {"id": "paracetamol-500mg-tab", "quantity": 1},
+            {"id": "paracetamol-500mg-tab", "quantity": 2}
+        ]
+    }
+    response = client.post("/api/v1/compare", json=payload)
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert len(data["breakdown"]) == 1
+    assert data["breakdown"][0]["quantity"] == 3
+    # 3 * 32.50 = 97.50, 3 * 5.00 = 15.00, savings = 82.50
+    assert data["breakdown"][0]["item_savings"] == 82.50
+    assert data["summary"]["total_savings"] == 82.50
+
+
+def test_compare_unknown_id_gracefully_skipped(client):
+    """Unknown ID should be tracked in skipped_ids and return 200, never crash 500."""
+    payload = {
+        "items": [
+            {"id": "paracetamol-500mg-tab", "quantity": 1},
+            {"id": "completely-fake-drug-id", "quantity": 1}
+        ]
+    }
+    response = client.post("/api/v1/compare", json=payload)
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["summary"]["total_items"] == 1
+    assert "completely-fake-drug-id" in data["summary"]["skipped_ids"]
+
+
+def test_compare_math_accuracy(client):
+    """Verify sum of item_savings exactly equals total_savings."""
+    payload = {
+        "items": [
+            {"id": "paracetamol-500mg-tab", "quantity": 2},
+            {"id": "metformin-500mg-tab", "quantity": 3},
+            {"id": "atorvastatin-10mg-tab", "quantity": 1}
+        ]
+    }
+    response = client.post("/api/v1/compare", json=payload)
+    assert response.status_code == 200
+    summary = response.json()["data"]["summary"]
+    breakdown = response.json()["data"]["breakdown"]
+
+    sum_savings = round(sum(it["item_savings"] for it in breakdown), 2)
+    assert summary["total_savings"] == sum_savings
+    expected_pct = round((summary["total_savings"] / summary["total_branded_cost"]) * 100, 1)
+    assert summary["overall_savings_percentage"] == expected_pct
 
 
 def test_offline_data_version(client):
@@ -167,15 +233,20 @@ def test_offline_data_version(client):
     assert response.status_code == 200
     json_data = response.json()
     assert json_data["success"] is True
-    assert json_data["data"]["total_records"] >= 20
+    assert json_data["data"]["total_records"] >= 80
     assert "dataset_hash" in json_data["data"]
+    # Check deterministic content-based version prefix
+    assert json_data["data"]["dataset_version"].startswith("v1.")
 
 
-def test_offline_data_bundle_and_etag(client):
+def test_offline_data_bundle_cache_control_and_etag(client):
     response = client.get("/api/v1/data/bundle")
     assert response.status_code == 200
     etag = response.headers.get("etag")
+    cache_control = response.headers.get("cache-control")
     assert etag is not None
+    assert cache_control == "public, max-age=3600"
+
     json_data = response.json()
     assert json_data["success"] is True
     assert len(json_data["drugs"]) >= 80
@@ -185,6 +256,8 @@ def test_offline_data_bundle_and_etag(client):
     # Test 304 Not Modified when ETag matches
     cached_response = client.get("/api/v1/data/bundle", headers={"If-None-Match": etag})
     assert cached_response.status_code == 304
+    assert cached_response.headers.get("etag") == etag
+    assert cached_response.headers.get("cache-control") == "public, max-age=3600"
 
 
 def test_search_paracetmol_and_crocin_misspellings(client):
@@ -221,7 +294,7 @@ def test_disclaimer_present_in_error_responses(client):
     assert r_404.status_code == 404
     assert r_404.json()["disclaimer"] == STANDARD_DISCLAIMER
 
-    r_422 = client.post("/api/v1/compare", json={"items": []})
+    r_422 = client.post("/api/v1/compare", json={"items": "invalid_string_type"})
     assert r_422.status_code == 422
     assert r_422.json()["disclaimer"] == STANDARD_DISCLAIMER
 
@@ -277,5 +350,36 @@ def test_search_by_molecule_and_strength(client):
     assert m2[0]["brand_name"] == "Atorva 20"
     assert m2[0]["strength"] == "20 mg"
     assert m2[0]["confidence_score"] >= 0.95
+
+
+def test_ten_real_world_misspellings_benchmark(client):
+    """
+    Audit Flaw 3: Test 10 real-world prescription typos.
+    All 10 must resolve to their correct intended active molecules.
+    """
+    cases = [
+        ("paracetmol", "Paracetamol"),
+        ("crocin 500", "Paracetamol"),
+        ("azithromicin", "Azithromycin"),
+        ("metformn", "Metformin"),
+        ("amlodipne", "Amlodipine"),
+        ("pantoprazol", "Pantoprazole"),
+        ("cetrizine", "Cetirizine"),
+        ("omeprazol", "Omeprazole"),
+        ("ibuprofn", "Ibuprofen"),
+        ("ranitidin", "Ranitidine")
+    ]
+
+    for typo, expected_molecule in cases:
+        response = client.get(f"/api/v1/search?q={typo}")
+        assert response.status_code == 200, f"Failed for {typo}"
+        matches = response.json()["data"]["matches"]
+        assert len(matches) >= 1, f"No matches found for misspelling '{typo}'"
+        top_match = matches[0]
+        assert expected_molecule.lower() in top_match["molecule"].lower(), (
+            f"Misspelling '{typo}' resolved to '{top_match['molecule']}', expected '{expected_molecule}'"
+        )
+        assert top_match["confidence_score"] >= 0.55, f"Confidence score too low for '{typo}': {top_match['confidence_score']}"
+
 
 
