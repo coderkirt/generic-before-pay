@@ -46,7 +46,7 @@ export function ResultsView() {
       {totals.countedLines === 0 ? <p lang={empty.locale}>{empty.text}</p> : null}
       {anyHidden ? <p lang={partial.locale}>{partial.text}</p> : null}
       {priced.map((item) => (
-        <MedicineCard key={item.line.key} line={item.line} record={item.record} priced={item.priced} />
+        <MedicineCard key={item.line.key} line={item.line} record={item.record} priced={item.priced} catalogOk={catalog.ok} />
       ))}
       <div className="actions no-print">
         <Link className="btn btn-primary" href="/kendras" lang={next.locale}>

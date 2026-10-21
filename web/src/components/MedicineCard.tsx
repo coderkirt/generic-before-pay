@@ -5,6 +5,7 @@ import type { DisplayRecord } from "@/lib/data/types";
 import type { MessageKey } from "@/lib/i18n/en";
 import { useI18n } from "@/lib/i18n/context";
 import type { LineStatus, PricedLine } from "@/lib/pricing/compare";
+import { comparisonEligibility } from "@/lib/pricing/eligibility";
 import type { RxLine } from "@/lib/session/reducer";
 import { MatchStatus } from "@/components/MatchStatus";
 
@@ -22,13 +23,21 @@ export function MedicineCard({
   line,
   record,
   priced,
+  catalogOk = true,
 }: {
   line: RxLine;
   record: DisplayRecord | undefined;
   priced: PricedLine;
+  catalogOk?: boolean;
 }) {
   const { t } = useI18n();
-  const showPrice = line.confirmed && priced.status === "same_composition_comparable" && priced.brandLineTotal !== null && priced.genericLineTotal !== null;
+  const eligibility = comparisonEligibility({
+    catalogOk,
+    tier: line.tier,
+    confirmed: line.confirmed,
+    status: priced.status,
+  });
+  const showPrice = eligibility === "verified" && priced.brandLineTotal !== null && priced.genericLineTotal !== null;
   const status = t(STATUS_KEY[priced.status]);
   const hidden = t("price.hidden");
   const info = t("info.missing");
@@ -40,7 +49,7 @@ export function MedicineCard({
   const title = record?.brandName ?? line.query;
 
   return (
-    <article className="medicine-row">
+    <article className="medicine-row" data-eligibility={eligibility}>
       <h3>{title}</h3>
       <MatchStatus tier={line.tier} />
       <p lang={status.locale}>{status.text}</p>

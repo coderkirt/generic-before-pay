@@ -62,7 +62,7 @@ export function PrintSheet() {
       {priced.length === 0 ? <p lang={none.locale}>{none.text}</p> : null}
       <SavingCard totals={totals} />
       {priced.map((item) => (
-        <MedicineCard key={item.line.key} line={item.line} record={item.record} priced={item.priced} />
+        <MedicineCard key={item.line.key} line={item.line} record={item.record} priced={item.priced} catalogOk={catalog.ok} />
       ))}
       <section>
         <h2 lang={kendra.locale}>{kendra.text}</h2>
