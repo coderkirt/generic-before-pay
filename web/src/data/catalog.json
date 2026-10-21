@@ -1,0 +1,366 @@
+{
+  "provenance": "fixture",
+  "priceDate": null,
+  "disclaimer": "This shows published generic names and indicative prices for medicines already named. It is not medical advice and it is not a recommendation to substitute. Confirm the medicine, the strength, and the price with your doctor or pharmacist before you buy or change anything.",
+  "sourceFile": "data/curated_drugs.json",
+  "contentSha256": "c9176732bc431971662354ab40fb4ca2ef86b9aee79e92d92147217a8cdc0287",
+  "records": [
+    {
+      "id": "paracetamol-500mg-tab",
+      "brand_name": "Calpol 500",
+      "molecule": "Paracetamol",
+      "strength": "500 mg",
+      "unit": "strip of 10 tablets",
+      "branded_price": 32.5,
+      "generic_price": 5,
+      "savings_amount": 27.5,
+      "savings_percentage": 84.6,
+      "source": "PMBJP Price List 2024 / NPPA",
+      "aliases": [
+        "calpol",
+        "crocin",
+        "paracip",
+        "dolo 500",
+        "calpol 500mg"
+      ]
+    },
+    {
+      "id": "paracetamol-650mg-tab",
+      "brand_name": "Dolo 650",
+      "molecule": "Paracetamol",
+      "strength": "650 mg",
+      "unit": "strip of 15 tablets",
+      "branded_price": 34,
+      "generic_price": 7.5,
+      "savings_amount": 26.5,
+      "savings_percentage": 77.9,
+      "source": "PMBJP Price List 2024 / NPPA",
+      "aliases": [
+        "dolo",
+        "dolo 650",
+        "calpol 650",
+        "pacimol 650"
+      ]
+    },
+    {
+      "id": "metformin-500mg-tab",
+      "brand_name": "Glycomet 500",
+      "molecule": "Metformin Hydrochloride",
+      "strength": "500 mg",
+      "unit": "strip of 10 tablets",
+      "branded_price": 28,
+      "generic_price": 5,
+      "savings_amount": 23,
+      "savings_percentage": 82.1,
+      "source": "PMBJP Price List 2024 / NPPA",
+      "aliases": [
+        "glycomet",
+        "glycomet 500",
+        "obimet",
+        "gluformin"
+      ]
+    },
+    {
+      "id": "metformin-1000mg-sr-tab",
+      "brand_name": "Glycomet SR 1000",
+      "molecule": "Metformin Hydrochloride (Sustained Release)",
+      "strength": "1000 mg",
+      "unit": "strip of 10 tablets",
+      "branded_price": 62,
+      "generic_price": 12,
+      "savings_amount": 50,
+      "savings_percentage": 80.6,
+      "source": "PMBJP Price List 2024 / NPPA",
+      "aliases": [
+        "glycomet 1000",
+        "glycomet sr 1000",
+        "gluformin sr"
+      ]
+    },
+    {
+      "id": "atorvastatin-10mg-tab",
+      "brand_name": "Atorva 10",
+      "molecule": "Atorvastatin",
+      "strength": "10 mg",
+      "unit": "strip of 10 tablets",
+      "branded_price": 98,
+      "generic_price": 11,
+      "savings_amount": 87,
+      "savings_percentage": 88.8,
+      "source": "PMBJP Price List 2024 / NPPA",
+      "aliases": [
+        "atorva",
+        "atorlip",
+        "lipitor",
+        "storvas"
+      ]
+    },
+    {
+      "id": "atorvastatin-20mg-tab",
+      "brand_name": "Atorva 20",
+      "molecule": "Atorvastatin",
+      "strength": "20 mg",
+      "unit": "strip of 10 tablets",
+      "branded_price": 180,
+      "generic_price": 19,
+      "savings_amount": 161,
+      "savings_percentage": 89.4,
+      "source": "PMBJP Price List 2024 / NPPA",
+      "aliases": [
+        "atorva 20",
+        "atorlip 20",
+        "storvas 20"
+      ]
+    },
+    {
+      "id": "amlodipine-5mg-tab",
+      "brand_name": "Amlong 5",
+      "molecule": "Amlodipine",
+      "strength": "5 mg",
+      "unit": "strip of 10 tablets",
+      "branded_price": 45,
+      "generic_price": 5,
+      "savings_amount": 40,
+      "savings_percentage": 88.9,
+      "source": "PMBJP Price List 2024 / NPPA",
+      "aliases": [
+        "amlong",
+        "stamlo",
+        "amlovas",
+        "amlovas 5"
+      ]
+    },
+    {
+      "id": "telmisartan-40mg-tab",
+      "brand_name": "Telma 40",
+      "molecule": "Telmisartan",
+      "strength": "40 mg",
+      "unit": "strip of 15 tablets",
+      "branded_price": 92,
+      "generic_price": 12,
+      "savings_amount": 80,
+      "savings_percentage": 87,
+      "source": "PMBJP Price List 2024 / NPPA",
+      "aliases": [
+        "telma",
+        "telmikind",
+        "telvas",
+        "telpres"
+      ]
+    },
+    {
+      "id": "azithromycin-500mg-tab",
+      "brand_name": "Azithral 500",
+      "molecule": "Azithromycin",
+      "strength": "500 mg",
+      "unit": "strip of 5 tablets",
+      "branded_price": 132,
+      "generic_price": 38,
+      "savings_amount": 94,
+      "savings_percentage": 71.2,
+      "source": "PMBJP Price List 2024 / NPPA",
+      "aliases": [
+        "azithral",
+        "azee",
+        "zady",
+        "azibact"
+      ]
+    },
+    {
+      "id": "amoxicillin-clav-625mg-tab",
+      "brand_name": "Augmentin 625 Duo",
+      "molecule": "Amoxicillin + Potassium Clavulanate",
+      "strength": "500 mg + 125 mg",
+      "unit": "strip of 10 tablets",
+      "branded_price": 204,
+      "generic_price": 55,
+      "savings_amount": 149,
+      "savings_percentage": 73,
+      "source": "PMBJP Price List 2024 / NPPA",
+      "aliases": [
+        "augmentin",
+        "moxikind cv",
+        "clamp",
+        "admenta"
+      ]
+    },
+    {
+      "id": "pantoprazole-40mg-tab",
+      "brand_name": "Pan 40",
+      "molecule": "Pantoprazole",
+      "strength": "40 mg",
+      "unit": "strip of 15 tablets",
+      "branded_price": 95,
+      "generic_price": 11,
+      "savings_amount": 84,
+      "savings_percentage": 88.4,
+      "source": "PMBJP Price List 2024 / NPPA",
+      "aliases": [
+        "pan 40",
+        "pantocid 40",
+        "pantodac",
+        "pantop"
+      ]
+    },
+    {
+      "id": "pantoprazole-domperidone-cap",
+      "brand_name": "Pan-D",
+      "molecule": "Pantoprazole + Domperidone",
+      "strength": "40 mg + 30 mg",
+      "unit": "strip of 10 capsules",
+      "branded_price": 198,
+      "generic_price": 28,
+      "savings_amount": 170,
+      "savings_percentage": 85.9,
+      "source": "PMBJP Price List 2024 / NPPA",
+      "aliases": [
+        "pan d",
+        "pantocid dsr",
+        "pantodac dsr",
+        "pan-dsr"
+      ]
+    },
+    {
+      "id": "omeprazole-20mg-cap",
+      "brand_name": "Omez 20",
+      "molecule": "Omeprazole",
+      "strength": "20 mg",
+      "unit": "strip of 20 capsules",
+      "branded_price": 65,
+      "generic_price": 9,
+      "savings_amount": 56,
+      "savings_percentage": 86.2,
+      "source": "PMBJP Price List 2024 / NPPA",
+      "aliases": [
+        "omez",
+        "omez 20",
+        "omizac",
+        "procept"
+      ]
+    },
+    {
+      "id": "rosuvastatin-10mg-tab",
+      "brand_name": "Rozavel 10",
+      "molecule": "Rosuvastatin",
+      "strength": "10 mg",
+      "unit": "strip of 10 tablets",
+      "branded_price": 165,
+      "generic_price": 18,
+      "savings_amount": 147,
+      "savings_percentage": 89.1,
+      "source": "PMBJP Price List 2024 / NPPA",
+      "aliases": [
+        "rozavel",
+        "rosuvas",
+        "crestor",
+        "razel"
+      ]
+    },
+    {
+      "id": "montelukast-levocetirizine-tab",
+      "brand_name": "Montair-LC",
+      "molecule": "Montelukast + Levocetirizine",
+      "strength": "10 mg + 5 mg",
+      "unit": "strip of 10 tablets",
+      "branded_price": 180,
+      "generic_price": 24,
+      "savings_amount": 156,
+      "savings_percentage": 86.7,
+      "source": "PMBJP Price List 2024 / NPPA",
+      "aliases": [
+        "montair lc",
+        "telekast l",
+        "montek lc",
+        "levocet m"
+      ]
+    },
+    {
+      "id": "cetirizine-10mg-tab",
+      "brand_name": "Cetzine 10",
+      "molecule": "Cetirizine Hydrochloride",
+      "strength": "10 mg",
+      "unit": "strip of 10 tablets",
+      "branded_price": 22,
+      "generic_price": 4.5,
+      "savings_amount": 17.5,
+      "savings_percentage": 79.5,
+      "source": "PMBJP Price List 2024 / NPPA",
+      "aliases": [
+        "cetzine",
+        "alerid",
+        "zyrtec",
+        "okacet"
+      ]
+    },
+    {
+      "id": "ibuprofen-400mg-tab",
+      "brand_name": "Brufen 400",
+      "molecule": "Ibuprofen",
+      "strength": "400 mg",
+      "unit": "strip of 15 tablets",
+      "branded_price": 25,
+      "generic_price": 6,
+      "savings_amount": 19,
+      "savings_percentage": 76,
+      "source": "PMBJP Price List 2024 / NPPA",
+      "aliases": [
+        "brufen",
+        "brufen 400",
+        "ibugesic"
+      ]
+    },
+    {
+      "id": "losartan-50mg-tab",
+      "brand_name": "Losar 50",
+      "molecule": "Losartan Potassium",
+      "strength": "50 mg",
+      "unit": "strip of 10 tablets",
+      "branded_price": 95,
+      "generic_price": 12,
+      "savings_amount": 83,
+      "savings_percentage": 87.4,
+      "source": "PMBJP Price List 2024 / NPPA",
+      "aliases": [
+        "losar",
+        "losakar",
+        "repace",
+        "zaart"
+      ]
+    },
+    {
+      "id": "metoprolol-50mg-tab",
+      "brand_name": "Betaloc 50",
+      "molecule": "Metoprolol Tartrate",
+      "strength": "50 mg",
+      "unit": "strip of 10 tablets",
+      "branded_price": 75,
+      "generic_price": 12,
+      "savings_amount": 63,
+      "savings_percentage": 84,
+      "source": "PMBJP Price List 2024 / NPPA",
+      "aliases": [
+        "betaloc",
+        "metolar",
+        "seloken"
+      ]
+    },
+    {
+      "id": "ciprofloxacin-500mg-tab",
+      "brand_name": "Ciplox 500",
+      "molecule": "Ciprofloxacin",
+      "strength": "500 mg",
+      "unit": "strip of 10 tablets",
+      "branded_price": 48,
+      "generic_price": 14,
+      "savings_amount": 34,
+      "savings_percentage": 70.8,
+      "source": "PMBJP Price List 2024 / NPPA",
+      "aliases": [
+        "ciplox",
+        "cifran",
+        "ciprobid",
+        "zoxan"
+      ]
+    }
+  ]
+}

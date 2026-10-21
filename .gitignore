@@ -26,3 +26,16 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
+web/test-results/
+web/playwright-report/
+web/blob-report/
+test-results/
+playwright-report/
+
+# Node / Next.js
+node_modules/
+web/node_modules/
+web/.next/
+web/out/
+web/tsconfig.tsbuildinfo
+*.tsbuildinfo
