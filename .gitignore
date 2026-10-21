@@ -26,3 +26,10 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Secrets and OCR eval photos
+.env
+janrx/.env
+janrx/backend/evals/boxes/*
+!janrx/backend/evals/boxes/README.md
+janrx/backend/evals/report.json

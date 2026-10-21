@@ -1,0 +1,11 @@
+---
+description: FastAPI backend conventions
+globs: ["backend/**/*.py"]
+alwaysApply: false
+---
+- Python 3.12, FastAPI, Pydantic v2, httpx, Pillow, rapidfuzz. Type-hint everything.
+- Errors: raise `ApiError(status, code, message, fallback=...)`. Never return raw exceptions or stack traces.
+- Every handler is reachable with `create_app(settings, ocr_provider)` so tests can inject fakes. No module-level global state beyond `app`.
+- Logging: use `logging.getLogger("janrx")` with `extra={"fields": {...}}`. Request ID is automatic. No PII, no image data, no extracted text in logs.
+- OCR providers implement `OcrProvider` (`app/ocr/base.py`). Add new providers there; select via `OCR_PROVIDER`.
+- Tests are mocked (no network, no real model). Run `pytest -q` before finishing a task.

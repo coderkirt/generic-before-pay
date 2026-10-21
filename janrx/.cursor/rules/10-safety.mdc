@@ -1,0 +1,10 @@
+---
+description: Medical-safety guardrails for any code touching model output or user-facing copy
+globs: ["backend/**/*.py", "web/**/*"]
+alwaysApply: false
+---
+- Model output is untrusted. Only `text` and `candidates` (list of strings) may leave the OCR layer.
+- Candidates must appear in the extracted text (see `sanitize_candidates`). Do not loosen this.
+- UI/API copy must not say "switch", "replace", "safe", "recommended", or "correct" about a medicine match.
+- Non-exact fuzzy matches always carry a "please verify" notice. Uncertain matches show no price.
+- Every OCR/prescription response includes `disclaimer` (single source: `backend/app/disclaimer.py`).
