@@ -1,4 +1,4 @@
-# JanRx frontend notes
+# Generic Before Pay frontend notes
 
 Phase 0 is the inspection. Later milestones append a log under "Milestone log". The shell does not implement matching, pricing, OCR, or Kendra lookup.
 
@@ -416,8 +416,19 @@ Screenshots from a dev Chromium pass at 375px: home (black actions, yellow demo 
 
 ### Remaining "JanRx" mentions
 
-- This file (title, the zip reference in §3, and the historical D1 row).
+- Historical rows in this file still say JanRx where that was the name at inspection time.
 - `work-breakdown.md`.
-- Untracked `frontend/README.md`.
-- UI strings, the npm package name, and the manifest say Generic Before Pay.
+- The upstream OCR package directory is `janrx/`. It was not renamed. The UI, npm package, and manifest say Generic Before Pay.
+
+## Migration from upstream `66b45e2`
+
+Upstream has no `web/` app. The working frontend was kept. The merge brought in the FastAPI drug API, the 106-row seed, and the `janrx/` OCR service.
+
+- Catalog sync now bundles 106 fixture rows. Content hash `f421488089a72bc3bfa21e953929a37529c72fec89a7a68dff237ce7e6884b85`. Provenance stays `fixture`. Price date stays null.
+- Savings percentages use Python half-even rounding, matching `scripts/validate_and_normalize.py`.
+- Names shared by more than one strength stay uncertain. `crocin` no longer resolves to Calpol 500 alone, because Crocin Advance is also in the seed. Aspirin is in the seed, so it is no longer "not in data".
+- OCR client `POST /v1/ocr` now sends `handwriting=true|false`. The review screen still shows the fixed English notice, not model text.
+- Prices render only when comparison eligibility is `verified`: the user confirmed the name and the pricing status is `same_composition_comparable`. A missing price date is shown as "not in this dataset", not as stale data.
+- Typed entry still works with no network. The app does not call `/api/v1/search` or `/v1/prescription/summary` on the critical path, because those calls would drop the offline path and the search route returns prices before confirmation.
+- Kendra fixtures under `janrx/backend/tests` are not shipped as real centres.
 
