@@ -18,8 +18,9 @@ from backend.dal import get_all_drugs
 
 
 def _clean_text(text: str) -> str:
-    """Normalize text to lowercase alphanumeric (supports Unicode/Hindi) + spaces."""
-    return re.sub(r'[^\w\s+]', ' ', text.lower(), flags=re.UNICODE).strip()
+    """Normalize text to lowercase alphanumeric (supports Unicode/Hindi) + spaces, separating numbers from units."""
+    t = re.sub(r'(\d+)\s*(mg|ml|mcg|iu|gm|g)\b', r'\1 \2', text, flags=re.IGNORECASE)
+    return re.sub(r'[^\w\s+]', ' ', t.lower(), flags=re.UNICODE).strip()
 
 
 def _tokenize(text: str) -> List[str]:

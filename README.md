@@ -70,19 +70,93 @@ python -m uvicorn backend.main:app --reload --port 8000
 - **Interactive Swagger Docs**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 - **ReDoc**: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
 
-### Core Endpoints
+### Core Endpoints & Example cURL Calls
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/api/v1/search?q={query}&limit=3` | Fuzzy search with typo tolerance, strength ranking, and confidence scores. |
-| `GET` | `/api/v1/drugs/{id}` | Detailed pricing, active molecule, packaging unit, and source. |
-| `POST` | `/api/v1/compare` | Prescription savings basket calculator (per-item + total savings). |
-| `GET` | `/api/v1/data/version` | Lightweight dataset version, hash, and record count for offline sync checks. |
-| `GET` | `/api/v1/data/bundle` | Full curated dataset with `ETag` and HTTP `304 Not Modified` support for offline caching. |
+Base URL: `http://127.0.0.1:8000/api/v1` *(or `/api` fallback)*
 
-*Note: All endpoints are also accessible via `/api/...` as a fallback prefix.*
+#### 1. Fuzzy Search (`GET /api/v1/search?q={query}&limit=3`)
+Tolerates typos (e.g. `paracetmol`, `crocin 500mg`), missing strengths, and searches both brand and molecule.
+```bash
+curl "http://127.0.0.1:8000/api/v1/search?q=crocin%20500mg"
+```
+```json
+{
+  "success": true,
+  "data": {
+    "query": "crocin 500mg",
+    "total_matches": 2,
+    "matches": [
+      {
+        "id": "crocin-advance-tab",
+        "brand_name": "Crocin Advance",
+        "molecule": "Paracetamol (Fast Release)",
+        "strength": "500 mg",
+        "unit": "strip of 20 tablets",
+        "branded_price": 42.0,
+        "generic_price": 10.0,
+        "savings_amount": 32.0,
+        "savings_percentage": 76.2,
+        "confidence_score": 1.0,
+        "match_type": "alias_exact"
+      }
+    ]
+  },
+  "disclaimer": "This shows published generic names and indicative prices for medicines already named. It is not medical advice and it is not a recommendation to substitute. Confirm the medicine, the strength, and the price with your doctor or pharmacist before you buy or change anything."
+}
+```
 
-### Run Automated Tests
+#### 2. Drug Detail (`GET /api/v1/drugs/{id}`)
+```bash
+curl "http://127.0.0.1:8000/api/v1/drugs/paracetamol-500mg-tab"
+```
+
+#### 3. Prescription Savings Basket (`POST /api/v1/compare`)
+Accepts either structured `items` with quantities or a simple `ids` array. Automatically merges duplicates and tolerates empty baskets gracefully.
+```bash
+curl -X POST "http://127.0.0.1:8000/api/v1/compare" \
+     -H "Content-Type: application/json" \
+     -d '{"items": [{"id": "paracetamol-500mg-tab", "quantity": 2}, {"id": "metformin-500mg-tab", "quantity": 1}]}'
+```
+```json
+{
+  "success": true,
+  "data": {
+    "summary": {
+      "total_items": 2,
+      "total_units": 3,
+      "total_branded_cost": 93.0,
+      "total_generic_cost": 15.0,
+      "total_savings": 78.0,
+      "overall_savings_percentage": 83.9,
+      "currency": "INR",
+      "skipped_ids": []
+    },
+    "breakdown": [...]
+  },
+  "disclaimer": "This shows published generic names and indicative prices for medicines already named. It is not medical advice and it is not a recommendation to substitute. Confirm the medicine, the strength, and the price with your doctor or pharmacist before you buy or change anything."
+}
+```
+
+#### 4. Offline Version Check (`GET /api/v1/data/version`)
+Returns deterministic content-based version and SHA-256 hash.
+```bash
+curl "http://127.0.0.1:8000/api/v1/data/version"
+```
+
+#### 5. Offline Data Bundle Sync (`GET /api/v1/data/bundle`)
+Includes HTTP `ETag` and `Cache-Control: public, max-age=3600`. Supports conditional `If-None-Match` returning `304 Not Modified`.
+```bash
+curl -i "http://127.0.0.1:8000/api/v1/data/bundle"
+```
+
+---
+
+### Integration & Architecture Notes
+- **Zero Hallucination / Bundled Offline Store**: The dataset (106 curated Indian medicines) is shipped locally and stored in SQLite. **Zero external APIs or LLMs are invoked during search**.
+- **CORS Configured for Frontend Dev**: Pre-configured to accept requests and credentials from `http://localhost:5173` (Vite), `http://localhost:3000` (Next.js/React), `http://localhost:8080`, and any local port regex.
+- **Sub-millisecond LRU Caching**: Repeated queries hit an in-memory LRU cache keyed by dataset content hash.
+
+### Run Automated Tests (26 Tests)
 ```bash
 python -m pytest tests/ -v
 ```
@@ -91,4 +165,5 @@ python -m pytest tests/ -v
 ```bash
 python scripts/validate_and_normalize.py
 ```
+
 

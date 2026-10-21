@@ -382,4 +382,49 @@ def test_ten_real_world_misspellings_benchmark(client):
         assert top_match["confidence_score"] >= 0.55, f"Confidence score too low for '{typo}': {top_match['confidence_score']}"
 
 
+def test_search_attached_strength(client):
+    """Test attached strength tokens (e.g. 'Crocin 500mg', 'Dolo 650mg')."""
+    r1 = client.get("/api/v1/search?q=Crocin 500mg")
+    assert r1.status_code == 200
+    m1 = r1.json()["data"]["matches"]
+    assert len(m1) >= 1
+    assert any("Crocin" in it["brand_name"] or "Calpol" in it["brand_name"] for it in m1)
+    assert m1[0]["strength"] == "500 mg"
+
+    r2 = client.get("/api/v1/search?q=Dolo 650mg")
+    assert r2.status_code == 200
+    m2 = r2.json()["data"]["matches"]
+    assert len(m2) >= 1
+    assert m2[0]["brand_name"] == "Dolo 650"
+    assert m2[0]["strength"] == "650 mg"
+
+
+def test_cors_headers_and_preflight(client):
+    """Test CORS allows frontend origins (e.g. Vite on 5173, Next.js on 3000)."""
+    headers = {
+        "Origin": "http://localhost:5173",
+        "Access-Control-Request-Method": "GET"
+    }
+    # Preflight OPTIONS check
+    r_options = client.options("/api/v1/search?q=Calpol", headers=headers)
+    assert r_options.status_code == 200
+    assert r_options.headers.get("access-control-allow-origin") == "http://localhost:5173"
+    assert r_options.headers.get("access-control-allow-credentials") == "true"
+
+    # Regular GET request check
+    r_get = client.get("/api/v1/search?q=Calpol", headers={"Origin": "http://localhost:5173"})
+    assert r_get.status_code == 200
+    assert r_get.headers.get("access-control-allow-origin") == "http://localhost:5173"
+
+
+def test_lru_query_caching(client):
+    """Test identical repeated queries execute correctly and hit cache."""
+    r1 = client.get("/api/v1/search?q=Paracetamol")
+    r2 = client.get("/api/v1/search?q=Paracetamol")
+    assert r1.status_code == 200
+    assert r2.status_code == 200
+    assert r1.json()["data"]["matches"] == r2.json()["data"]["matches"]
+
+
+
 

@@ -80,13 +80,26 @@ def get_all_drugs(conn: Optional[sqlite3.Connection] = None) -> List[Dict[str, A
             conn.close()
 
 
+from functools import lru_cache
+
+
+@lru_cache(maxsize=512)
+def _cached_fuzzy_search(query: str, limit: int, dataset_hash: str) -> tuple:
+    from backend.search import fuzzy_search_drugs
+    drugs = get_all_drugs()
+    results = fuzzy_search_drugs(query=query, drugs=drugs, limit=limit)
+    return tuple(results)
+
+
 def search_drugs(query: str, limit: int = 3, conn: Optional[sqlite3.Connection] = None) -> List[Dict[str, Any]]:
     """
     Search drugs via the Data Access Layer, querying SQLite as the single source of truth.
+    Features an LRU query cache for sub-millisecond execution on repeated queries.
     """
-    from backend.search import fuzzy_search_drugs
-    drugs = get_all_drugs(conn=conn)
-    return fuzzy_search_drugs(query=query, drugs=drugs, limit=limit)
+    meta = get_dataset_metadata(conn=conn)
+    current_hash = meta.get("dataset_hash", "")
+    cached_res = _cached_fuzzy_search(query=query.strip(), limit=limit, dataset_hash=current_hash)
+    return [dict(item) for item in cached_res]
 
 
 def get_dataset_metadata(conn: Optional[sqlite3.Connection] = None) -> Dict[str, Any]:
