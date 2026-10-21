@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n/context";
 import type { Gender } from "@/lib/session/reducer";
@@ -24,6 +24,7 @@ export function PatientForm() {
   const { state, dispatch } = useSession();
   const router = useRouter();
   const [asking, setAsking] = useState(state.patient.confirmed);
+  const leavingRef = useRef(false);
   const [showAgeError, setShowAgeError] = useState(false);
   const [showGenderError, setShowGenderError] = useState(false);
   const h1 = t("patient.h1");
@@ -54,8 +55,13 @@ export function PatientForm() {
             className="btn btn-primary"
             lang={yes.locale}
             onClick={() => {
+              if (leavingRef.current) return;
+              leavingRef.current = true;
               dispatch({ type: "confirmPatient" });
               router.push("/results");
+              window.setTimeout(() => {
+                leavingRef.current = false;
+              }, 1000);
             }}
           >
             {yes.text}

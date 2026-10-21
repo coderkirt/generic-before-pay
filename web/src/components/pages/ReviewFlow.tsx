@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DidYouMean } from "@/components/DidYouMean";
 import { DemoBadge } from "@/components/DemoBadge";
@@ -18,6 +18,7 @@ export function ReviewFlow() {
   const { state, dispatch } = useSession();
   const router = useRouter();
   const [draft, setDraft] = useState("");
+  const leavingRef = useRef(false);
   const catalog = loadBundledCatalog();
   const records = catalog.ok ? catalog.records : [];
   const h1 = t("review.h1");
@@ -158,7 +159,14 @@ export function ReviewFlow() {
           lang={cont.locale}
           disabled={!canContinue}
           aria-describedby={canContinue ? undefined : "continue-note"}
-          onClick={() => router.push("/patient")}
+          onClick={() => {
+            if (leavingRef.current) return;
+            leavingRef.current = true;
+            router.push("/patient");
+            window.setTimeout(() => {
+              leavingRef.current = false;
+            }, 1000);
+          }}
         >
           {cont.text}
         </button>
