@@ -47,3 +47,48 @@ A cleaned subset is bundled as CSV or JSON in the repo. Curating about 200 commo
 ## Disclaimer (product copy)
 
 > This shows published generic names and indicative prices for medicines already named. It is not medical advice and it is not a recommendation to substitute. Confirm the medicine, the strength, and the price with your doctor or pharmacist before you buy or change anything.
+
+---
+
+## Backend: Quickstart & Runbook
+
+### Documentation
+- 📋 [Drug Data Schema](docs/drug-data-schema.md) — Attribute definitions, validation rules, and safety blacklist.
+- 📡 [REST API Contract](docs/api-contract.md) — Request/response shapes, error formats, and ETag caching rules.
+
+### Prerequisites & Setup
+Ensure Python 3.10+ is installed:
+```bash
+pip install -r requirements.txt
+```
+
+### Run the API Server
+Start the FastAPI server with hot-reload:
+```bash
+python -m uvicorn backend.main:app --reload --port 8000
+```
+- **Interactive Swagger Docs**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+- **ReDoc**: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
+
+### Core Endpoints
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/v1/search?q={query}&limit=3` | Fuzzy search with typo tolerance, strength ranking, and confidence scores. |
+| `GET` | `/api/v1/drugs/{id}` | Detailed pricing, active molecule, packaging unit, and source. |
+| `POST` | `/api/v1/compare` | Prescription savings basket calculator (per-item + total savings). |
+| `GET` | `/api/v1/data/version` | Lightweight dataset version, hash, and record count for offline sync checks. |
+| `GET` | `/api/v1/data/bundle` | Full curated dataset with `ETag` and HTTP `304 Not Modified` support for offline caching. |
+
+*Note: All endpoints are also accessible via `/api/...` as a fallback prefix.*
+
+### Run Automated Tests
+```bash
+python -m pytest tests/ -v
+```
+
+### Dataset Validation & Normalization
+```bash
+python scripts/validate_and_normalize.py
+```
+

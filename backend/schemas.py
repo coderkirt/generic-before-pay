@@ -172,3 +172,5 @@ class ErrorResponse(BaseModel):
 
     success: bool = False
     error: ErrorDetail
+    disclaimer: str = STANDARD_DISCLAIMER
+

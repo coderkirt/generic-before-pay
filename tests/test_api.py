@@ -178,10 +178,57 @@ def test_offline_data_bundle_and_etag(client):
     assert etag is not None
     json_data = response.json()
     assert json_data["success"] is True
-    assert len(json_data["drugs"]) >= 20
+    assert len(json_data["drugs"]) >= 80
     assert json_data["disclaimer"] == STANDARD_DISCLAIMER
     _assert_no_forbidden_fields(json_data)
 
     # Test 304 Not Modified when ETag matches
     cached_response = client.get("/api/v1/data/bundle", headers={"If-None-Match": etag})
     assert cached_response.status_code == 304
+
+
+def test_search_paracetmol_and_crocin_misspellings(client):
+    # Case 1: 'Paracetmol' misspelling
+    r1 = client.get("/api/v1/search?q=Paracetmol")
+    assert r1.status_code == 200
+    matches1 = r1.json()["data"]["matches"]
+    assert len(matches1) >= 1
+    names1 = [m["brand_name"] for m in matches1]
+    assert "Calpol 500" in names1 or "Dolo 650" in names1
+    assert matches1[0]["confidence_score"] >= 0.80
+
+    # Case 2: 'Crocin 500' alias
+    r2 = client.get("/api/v1/search?q=Crocin 500")
+    assert r2.status_code == 200
+    matches2 = r2.json()["data"]["matches"]
+    assert len(matches2) >= 1
+    assert matches2[0]["confidence_score"] >= 0.90
+
+
+def test_dual_route_prefix(client):
+    # Test unversioned /api/ path
+    r_unversioned = client.get("/api/search?q=Dolo 650")
+    assert r_unversioned.status_code == 200
+    assert r_unversioned.json()["data"]["matches"][0]["brand_name"] == "Dolo 650"
+
+    r_bundle = client.get("/api/data/version")
+    assert r_bundle.status_code == 200
+    assert r_bundle.json()["data"]["total_records"] >= 80
+
+
+def test_disclaimer_present_in_error_responses(client):
+    r_404 = client.get("/api/v1/drugs/non-existent-drug-1234")
+    assert r_404.status_code == 404
+    assert r_404.json()["disclaimer"] == STANDARD_DISCLAIMER
+
+    r_422 = client.post("/api/v1/compare", json={"items": []})
+    assert r_422.status_code == 422
+    assert r_422.json()["disclaimer"] == STANDARD_DISCLAIMER
+
+
+def test_dataset_size_at_least_80_records(client):
+    response = client.get("/api/v1/data/version")
+    assert response.status_code == 200
+    total = response.json()["data"]["total_records"]
+    assert total >= 80, f"Dataset has only {total} records, expected at least 80!"
+

@@ -116,7 +116,8 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
                 "code": "VALIDATION_ERROR",
                 "message": "Invalid request parameters or payload",
                 "details": exc.errors()
-            }
+            },
+            "disclaimer": STANDARD_DISCLAIMER
         }
     )
 
@@ -133,14 +134,18 @@ async def http_exception_handler(request: Request, exc: HTTPException):
                 "code": code,
                 "message": exc.detail,
                 "details": None
-            }
+            },
+            "disclaimer": STANDARD_DISCLAIMER
         }
     )
 
 
-# --- API Routes ---
+from fastapi import APIRouter
 
-@app.get("/api/v1/search", response_model=SearchResponse)
+api_router = APIRouter()
+
+
+@api_router.get("/search", response_model=SearchResponse)
 def search_drugs_endpoint(
     q: str = Query(..., min_length=1, description="Drug brand name, partial name, or molecule"),
     limit: int = Query(3, ge=1, le=10, description="Max matches to return (default 3)")
@@ -171,7 +176,7 @@ def search_drugs_endpoint(
     )
 
 
-@app.get("/api/v1/drugs/{id}", response_model=DrugDetailResponse)
+@api_router.get("/drugs/{id}", response_model=DrugDetailResponse)
 def get_drug_detail_endpoint(id: str):
     drug = get_drug_by_id(id)
     if not drug:
@@ -188,7 +193,7 @@ def get_drug_detail_endpoint(id: str):
     )
 
 
-@app.post("/api/v1/compare", response_model=CompareResponse)
+@api_router.post("/compare", response_model=CompareResponse)
 def compare_drugs_endpoint(payload: CompareRequest):
     items = [{"id": it.id, "quantity": it.quantity} for it in payload.items]
     result = calculate_compare(items)
@@ -209,7 +214,7 @@ def compare_drugs_endpoint(payload: CompareRequest):
     )
 
 
-@app.get("/api/v1/data/version", response_model=DataVersionResponse)
+@api_router.get("/data/version", response_model=DataVersionResponse)
 def get_data_version_endpoint():
     all_drugs = get_all_drugs()
     return DataVersionResponse(
@@ -223,7 +228,7 @@ def get_data_version_endpoint():
     )
 
 
-@app.get("/api/v1/data/bundle", response_model=DataBundleResponse)
+@api_router.get("/data/bundle", response_model=DataBundleResponse)
 def get_data_bundle_endpoint(request: Request, response: Response):
     client_etag = request.headers.get("if-none-match")
     if client_etag and client_etag.strip('"') == DATASET_HASH:
@@ -242,3 +247,8 @@ def get_data_bundle_endpoint(request: Request, response: Response):
         drugs=[DrugDetailData(**d) for d in all_drugs],
         disclaimer=STANDARD_DISCLAIMER
     )
+
+
+# Register routes under both /api/v1 (canonical) and /api (convenience fallback)
+app.include_router(api_router, prefix="/api/v1")
+app.include_router(api_router, prefix="/api")

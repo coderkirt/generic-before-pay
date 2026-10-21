@@ -18,12 +18,15 @@ from backend.dal import get_all_drugs
 
 
 def _clean_text(text: str) -> str:
-    """Normalize text to lowercase alphanumeric + spaces."""
-    return re.sub(r'[^a-z0-9\s+]', ' ', text.lower()).strip()
+    """Normalize text to lowercase alphanumeric (supports Unicode/Hindi) + spaces."""
+    return re.sub(r'[^\w\s+]', ' ', text.lower(), flags=re.UNICODE).strip()
 
 
 def _tokenize(text: str) -> List[str]:
     return [t for t in _clean_text(text).split() if t]
+
+
+STOP_WORDS = {"mg", "ml", "mcg", "iu", "gm", "tab", "cap", "tablets", "capsules", "sr", "er", "xr", "susp", "drop", "drops"}
 
 
 def _compute_field_score(query: str, target: str) -> Tuple[float, str]:
@@ -64,12 +67,14 @@ def _compute_field_score(query: str, target: str) -> Tuple[float, str]:
     if fuzzy_ratio >= 0.65:
         return round(fuzzy_ratio * 0.90, 2), "fuzzy"
 
-    # Check fuzzy similarity on individual words
+    # Check fuzzy similarity on individual significant words (ignore pure numbers & units)
     best_word_ratio = 0.0
     for q_word in q.split():
-        if len(q_word) < 3:
+        if len(q_word) < 3 or q_word.isdigit() or q_word in STOP_WORDS:
             continue
         for t_word in t.split():
+            if t_word.isdigit() or t_word in STOP_WORDS:
+                continue
             word_sim = difflib.SequenceMatcher(None, q_word, t_word).ratio()
             if word_sim > best_word_ratio:
                 best_word_ratio = word_sim
@@ -99,12 +104,28 @@ def fuzzy_search_drugs(
     scored_results = []
     clean_query = _clean_text(query)
     query_tokens = set(clean_query.split())
+    query_words = [w for w in query_tokens if not w.isdigit() and w not in STOP_WORDS and len(w) >= 2]
 
     for drug in drugs:
         brand = drug["brand_name"]
         molecule = drug["molecule"]
         strength = drug["strength"]
         aliases = drug.get("aliases", [])
+
+        # Validate that if user typed semantic words, candidate matches at least one
+        if query_words:
+            candidate_text = f"{brand} {molecule} {' '.join(aliases)}"
+            candidate_words = [w for w in _clean_text(candidate_text).split() if not w.isdigit() and w not in STOP_WORDS]
+            has_word_match = False
+            for qw in query_words:
+                for cw in candidate_words:
+                    if cw.startswith(qw) or qw.startswith(cw) or difflib.SequenceMatcher(None, qw, cw).ratio() >= 0.60:
+                        has_word_match = True
+                        break
+                if has_word_match:
+                    break
+            if not has_word_match:
+                continue
 
         best_score = 0.0
         best_type = "none"
@@ -124,7 +145,6 @@ def fuzzy_search_drugs(
 
         # 3. Check molecule
         score_mol, type_mol = _compute_field_score(query, molecule)
-        # Molecule matches slightly weighted to prefer specific brand when user searched brand
         mol_weighted = round(score_mol * 0.95, 2)
         if mol_weighted > best_score:
             best_score = mol_weighted
@@ -138,7 +158,6 @@ def fuzzy_search_drugs(
                 best_type = f"alias_{type_alias}"
 
         # 5. Strength token reinforcement
-        # If user explicitly specified a strength that matches this drug's strength
         strength_tokens = set(_clean_text(strength).split())
         if query_tokens.intersection(strength_tokens):
             best_score = min(1.0, round(best_score + 0.05, 2))
