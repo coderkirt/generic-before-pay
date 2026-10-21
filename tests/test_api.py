@@ -232,3 +232,50 @@ def test_dataset_size_at_least_80_records(client):
     total = response.json()["data"]["total_records"]
     assert total >= 80, f"Dataset has only {total} records, expected at least 80!"
 
+
+def test_search_by_molecule_paracetamol(client):
+    """Search by molecule 'Paracetamol' must return Crocin/Dolo/Calpol."""
+    response = client.get("/api/v1/search?q=Paracetamol")
+    assert response.status_code == 200
+    data = response.json()["data"]
+    matches = data["matches"]
+    assert len(matches) >= 2
+    matched_names = {m["brand_name"] for m in matches}
+    # Must contain common Paracetamol brands
+    assert any(name in matched_names for name in ["Calpol 500", "Dolo 650", "Crocin Advance"])
+    # All returned items must have Paracetamol as active molecule
+    for m in matches:
+        assert "Paracetamol" in m["molecule"]
+        assert m["confidence_score"] >= 0.85
+
+
+def test_search_by_brand_crocin(client):
+    """Search by brand 'Crocin' must return Crocin."""
+    response = client.get("/api/v1/search?q=Crocin")
+    assert response.status_code == 200
+    matches = response.json()["data"]["matches"]
+    assert len(matches) >= 1
+    matched_names = [m["brand_name"] for m in matches]
+    assert "Crocin Advance" in matched_names or "Calpol 500" in matched_names
+    assert matches[0]["confidence_score"] == 1.0
+
+
+def test_search_by_molecule_and_strength(client):
+    """Search by molecule + strength combination."""
+    r1 = client.get("/api/v1/search?q=Metformin 500")
+    assert r1.status_code == 200
+    m1 = r1.json()["data"]["matches"]
+    assert len(m1) >= 1
+    assert m1[0]["brand_name"] == "Glycomet 500"
+    assert m1[0]["strength"] == "500 mg"
+    assert m1[0]["confidence_score"] >= 0.95
+
+    r2 = client.get("/api/v1/search?q=Atorvastatin 20")
+    assert r2.status_code == 200
+    m2 = r2.json()["data"]["matches"]
+    assert len(m2) >= 1
+    assert m2[0]["brand_name"] == "Atorva 20"
+    assert m2[0]["strength"] == "20 mg"
+    assert m2[0]["confidence_score"] >= 0.95
+
+

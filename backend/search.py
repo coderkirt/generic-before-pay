@@ -53,13 +53,18 @@ def _compute_field_score(query: str, target: str) -> Tuple[float, str]:
         ratio = len(q) / len(t)
         return round(0.78 + 0.12 * ratio, 2), "substring"
 
-    # Token overlap (e.g. 'calpol 500' vs '500 calpol')
+    # Token overlap (e.g. 'metformin 500' vs 'metformin hydrochloride 500 mg')
     q_tokens = set(q.split())
     t_tokens = set(t.split())
     overlap = q_tokens.intersection(t_tokens)
     if overlap:
+        q_coverage = len(overlap) / len(q_tokens)
+        t_coverage = len(overlap) / len(t_tokens)
+        if q_coverage == 1.0:
+            # All query words present in target; prefer targets with fewer extraneous tokens
+            return round(0.90 + 0.08 * t_coverage, 2), "token_full_coverage"
         overlap_ratio = len(overlap) / max(len(q_tokens), len(t_tokens))
-        if overlap_ratio >= 0.8:
+        if overlap_ratio >= 0.7:
             return round(0.80 + 0.15 * overlap_ratio, 2), "token_match"
 
     # Fuzzy sequence similarity (tolerates misspellings/typos like 'clpol' -> 'calpol')
@@ -137,27 +142,37 @@ def fuzzy_search_drugs(
             best_type = f"brand_{type_brand}"
 
         # 2. Check brand name + strength combination
-        combined_brand = f"{brand} {strength}"
-        score_combined, type_comb = _compute_field_score(query, combined_brand)
-        if score_combined > best_score:
-            best_score = score_combined
-            best_type = f"brand_strength_{type_comb}"
+        score_brand_str, type_bstr = _compute_field_score(query, f"{brand} {strength}")
+        if score_brand_str > best_score:
+            best_score = score_brand_str
+            best_type = f"brand_strength_{type_bstr}"
 
-        # 3. Check molecule
+        # 3. Check molecule (first-class matching, equal weight to brand)
         score_mol, type_mol = _compute_field_score(query, molecule)
-        mol_weighted = round(score_mol * 0.95, 2)
-        if mol_weighted > best_score:
-            best_score = mol_weighted
+        if score_mol > best_score:
+            best_score = score_mol
             best_type = f"molecule_{type_mol}"
 
-        # 4. Check aliases
+        # 4. Check molecule + strength combination
+        score_mol_str, type_mstr = _compute_field_score(query, f"{molecule} {strength}")
+        if score_mol_str > best_score:
+            best_score = score_mol_str
+            best_type = f"molecule_strength_{type_mstr}"
+
+        # 5. Check full candidate string (brand + molecule + strength)
+        score_full, type_full = _compute_field_score(query, f"{brand} {molecule} {strength}")
+        if score_full > best_score:
+            best_score = score_full
+            best_type = f"full_candidate_{type_full}"
+
+        # 6. Check aliases
         for alias in aliases:
             score_alias, type_alias = _compute_field_score(query, alias)
             if score_alias > best_score:
                 best_score = score_alias
                 best_type = f"alias_{type_alias}"
 
-        # 5. Strength token reinforcement
+        # 7. Strength token reinforcement
         strength_tokens = set(_clean_text(strength).split())
         if query_tokens.intersection(strength_tokens):
             best_score = min(1.0, round(best_score + 0.05, 2))
