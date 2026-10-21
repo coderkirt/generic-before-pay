@@ -80,6 +80,37 @@ def get_all_drugs(conn: Optional[sqlite3.Connection] = None) -> List[Dict[str, A
             conn.close()
 
 
+def search_drugs(query: str, limit: int = 3, conn: Optional[sqlite3.Connection] = None) -> List[Dict[str, Any]]:
+    """
+    Search drugs via the Data Access Layer, querying SQLite as the single source of truth.
+    """
+    from backend.search import fuzzy_search_drugs
+    drugs = get_all_drugs(conn=conn)
+    return fuzzy_search_drugs(query=query, drugs=drugs, limit=limit)
+
+
+def get_dataset_metadata(conn: Optional[sqlite3.Connection] = None) -> Dict[str, Any]:
+    """
+    Fetches dataset version, hash, and record count directly from SQLite metadata.
+    """
+    should_close = False
+    if conn is None:
+        conn = get_db_connection()
+        should_close = True
+
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT key, value FROM dataset_metadata")
+        rows = cur.fetchall()
+        meta = {r["key"]: r["value"] for r in rows}
+        cur.execute("SELECT COUNT(*) FROM drugs")
+        meta["total_records"] = cur.fetchone()[0]
+        return meta
+    finally:
+        if should_close:
+            conn.close()
+
+
 def calculate_compare(items: List[Dict[str, Any]], conn: Optional[sqlite3.Connection] = None) -> Dict[str, Any]:
     """
     Given a list of items `[{"id": "...", "quantity": int}, ...]`,

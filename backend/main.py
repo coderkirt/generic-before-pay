@@ -31,10 +31,11 @@ from backend.database import init_db, DEFAULT_SEED_PATH
 from backend.dal import (
     get_drug_by_id,
     get_all_drugs,
+    search_drugs,
+    get_dataset_metadata,
     calculate_compare,
     STANDARD_DISCLAIMER
 )
-from backend.search import fuzzy_search_drugs
 from backend.schemas import (
     SearchResponse,
     SearchData,
@@ -151,7 +152,7 @@ def search_drugs_endpoint(
     limit: int = Query(3, ge=1, le=10, description="Max matches to return (default 3)")
 ):
     query_str = q.strip()
-    matches = fuzzy_search_drugs(query=query_str, limit=limit)
+    matches = search_drugs(query=query_str, limit=limit)
 
     _log_event(
         "search_query",
@@ -216,14 +217,14 @@ def compare_drugs_endpoint(payload: CompareRequest):
 
 @api_router.get("/data/version", response_model=DataVersionResponse)
 def get_data_version_endpoint():
-    all_drugs = get_all_drugs()
+    meta = get_dataset_metadata()
     return DataVersionResponse(
         success=True,
         data=DataVersionData(
             schema_version="1.0.0",
             dataset_version=DATASET_VERSION,
-            dataset_hash=DATASET_HASH,
-            total_records=len(all_drugs)
+            dataset_hash=meta.get("dataset_hash", DATASET_HASH),
+            total_records=int(meta.get("total_records", 0))
         )
     )
 
