@@ -17,19 +17,21 @@ describe("curated drug data", () => {
     const built = buildCatalogFile(source);
     expect(built.ok).toBe(true);
     if (!built.ok) return;
-    expect(built.file.records).toHaveLength(20);
+    expect(built.file.records).toHaveLength(106);
     expect(built.file.provenance).toBe("fixture");
     expect(built.file.priceDate).toBeNull();
     expect(built.file.disclaimer).toBe(DISCLAIMER);
-    expect(built.file.contentSha256).toBe("c9176732bc431971662354ab40fb4ca2ef86b9aee79e92d92147217a8cdc0287");
+    expect(built.file.contentSha256).toBe("f421488089a72bc3bfa21e953929a37529c72fec89a7a68dff237ce7e6884b85");
     expect(catalog.contentSha256).toBe(built.file.contentSha256);
-    expect(catalog.records).toHaveLength(20);
+    expect(catalog.records).toHaveLength(106);
   });
 
   it("exposes source, a missing price date, pack fields, and no invented medicine info", () => {
     const built = buildCatalogFile(source);
     if (!built.ok) throw new Error("seed failed");
-    const calpol = toDisplayRecord(built.file.records[0]!, "fixture");
+    const seed = built.file.records.find((record) => record.id === "paracetamol-500mg-tab");
+    if (!seed) throw new Error("missing paracetamol-500mg-tab");
+    const calpol = toDisplayRecord(seed, "fixture");
     expect(calpol.id).toBe("paracetamol-500mg-tab");
     expect(calpol.composition).toBe("Paracetamol");
     expect(calpol.strength).toBe("500 mg");

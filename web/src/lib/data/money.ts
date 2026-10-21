@@ -3,9 +3,19 @@ export function roundPaise(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
-/** Round a percentage to 1 decimal place. */
+/**
+ * Round a percentage to 1 decimal place, half to even.
+ * scripts/validate_and_normalize.py and the curated seed use Python's round().
+ */
 export function roundPercent(value: number): number {
-  return Math.round((value + Number.EPSILON) * 10) / 10;
+  const sign = value < 0 ? -1 : 1;
+  const scaled = Math.abs(value) * 10;
+  const base = Math.floor(scaled + 1e-10);
+  const fraction = scaled - base;
+  let rounded = base;
+  if (fraction > 0.5 + 1e-9) rounded = base + 1;
+  else if (fraction >= 0.5 - 1e-9) rounded = base % 2 === 0 ? base : base + 1;
+  return (sign * rounded) / 10;
 }
 
 /**
