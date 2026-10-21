@@ -442,5 +442,46 @@ def test_kendras_invalid_coordinates(client):
     assert response.json()["disclaimer"] == STANDARD_DISCLAIMER
 
 
+def test_unified_healthz_and_readyz(client):
+    """Test unified health and readiness endpoints mounted on the same application."""
+    r_health = client.get("/healthz")
+    assert r_health.status_code == 200
+    assert r_health.json() == {"status": "ok"}
+
+    r_ready = client.get("/readyz")
+    assert r_ready.status_code == 200
+    ready_data = r_ready.json()
+    assert ready_data["status"] == "ready"
+    assert ready_data["ocr"] in ("mock", "ok")
+    assert ready_data["typing_path"] == "available"
+    assert ready_data["data"]["brands"] is True
+    assert ready_data["data"]["janaushadhi_products"] is True
+    assert ready_data["data"]["kendras"] is True
+
+
+def test_unified_prescription_candidates_and_summary(client):
+    """Test prescription candidate scoring and summary on the single unified server."""
+    # 1. Candidates scoring
+    r_cand = client.post("/v1/prescription/candidates", json={"items": ["Dolo 650", "Calpol 500"]})
+    assert r_cand.status_code == 200
+    results = r_cand.json()["results"]
+    assert len(results) == 2
+    assert results[0]["tier"] in ("exact", "likely")
+    assert len(results[0]["matches"]) >= 1
+
+    # 2. Summary pricing calculation
+    summary_payload = {
+        "patient": {"age_years": 32, "gender": "male"},
+        "confirmed_by_user": True,
+        "items": [{"brand_id": "paracetamol-650mg-tab", "quantity_packs": 2}]
+    }
+    r_sum = client.post("/v1/prescription/summary", json=summary_payload)
+    assert r_sum.status_code == 200
+    sum_data = r_sum.json()
+    assert sum_data["totals"]["compared_lines"] == 1
+    assert sum_data["totals"]["difference_inr"] > 0
+    assert "disclaimer" in sum_data
+
+
 
 

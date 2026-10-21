@@ -56,6 +56,19 @@ from backend.schemas import (
     KendraItem
 )
 
+# JanRx Unified Modules
+from janrx.backend.app.config import get_settings as get_janrx_settings
+from janrx.backend.app.datastore import DataStore
+from janrx.backend.app.metrics import Metrics
+from janrx.backend.app.ratelimit import SlidingWindowLimiter
+from janrx.backend.app.ocr.service import build_provider
+from janrx.backend.app.errors import ApiError, envelope as janrx_envelope
+from janrx.backend.app.routers import health as janrx_health
+from janrx.backend.app.routers import ocr as janrx_ocr
+from janrx.backend.app.routers import prescription as janrx_prescription
+from janrx.backend.app.routers import kendras as janrx_kendras
+from janrx.backend.app.routers import metrics as janrx_metrics
+
 # Setup structured logger
 logger = logging.getLogger("generic_before_pay")
 logger.setLevel(logging.INFO)
@@ -96,10 +109,18 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Generic Before Pay API",
-    description="Cost-transparency and generic medicine alternatives lookup.",
+    description="Cost-transparency, generic medicine alternatives lookup, and prescription OCR.",
     version="1.0.0",
     lifespan=lifespan
 )
+
+# Initialize JanRx Unified State (OCR provider, data store, rate limiter, metrics)
+janrx_settings = get_janrx_settings()
+app.state.settings = janrx_settings
+app.state.metrics = Metrics()
+app.state.limiter = SlidingWindowLimiter(janrx_settings.ocr_rate_limit_per_minute, 60)
+app.state.ocr_provider = build_provider(janrx_settings)
+app.state.data = DataStore(janrx_settings.data_dir)
 
 FRONTEND_ORIGINS = [
     "http://localhost:5173",  # Vite dev server
@@ -120,6 +141,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(ApiError)
+async def api_error_handler(request: Request, exc: ApiError):
+    return janrx_envelope(exc.status_code, exc.code, exc.message, exc.fallback, exc.headers)
 
 
 # Global validation error handler
@@ -347,6 +373,22 @@ async def get_nearest_kendras(
     )
 
 
-# Register routes under both /api/v1 (canonical) and /api (convenience fallback)
+# Register core drug & compare routes under both /api/v1 (canonical) and /api (convenience fallback)
 app.include_router(api_router, prefix="/api/v1")
 app.include_router(api_router, prefix="/api")
+
+# Register JanRx Unified Routes:
+# 1. OCR service (/v1/ocr & /api/v1/ocr)
+# 2. Prescription verification (/v1/prescription/candidates, /v1/prescription/summary & /api/v1/...)
+# 3. Health & Readiness checks (/healthz, /readyz & /api/v1/healthz, /api/v1/readyz)
+# 4. Metrics (/v1/metrics & /api/v1/metrics)
+app.include_router(janrx_health.router)
+app.include_router(janrx_ocr.router)
+app.include_router(janrx_prescription.router)
+app.include_router(janrx_metrics.router)
+
+# Also expose under /api prefix for unified client compatibility
+app.include_router(janrx_ocr.router, prefix="/api")
+app.include_router(janrx_prescription.router, prefix="/api")
+app.include_router(janrx_health.router, prefix="/api/v1")
+app.include_router(janrx_metrics.router, prefix="/api")
