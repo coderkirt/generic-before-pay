@@ -41,20 +41,37 @@ def init_db(db_path: Optional[Path] = None, seed_path: Optional[Path] = None, fo
         )
     """)
 
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS dataset_metadata (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        )
+    """)
+
     cur.execute("CREATE INDEX IF NOT EXISTS idx_brand_name_lower ON drugs(brand_name_lower)")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_molecule_lower ON drugs(molecule_lower)")
     conn.commit()
 
-    if force_reload:
-        cur.execute("DELETE FROM drugs")
-        conn.commit()
+    actual_seed_path = seed_path or DEFAULT_SEED_PATH
+    current_hash = ""
+    if actual_seed_path.exists():
+        with open(actual_seed_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        import hashlib
+        current_hash = hashlib.sha256(content.encode('utf-8')).hexdigest()
 
-    # Check if empty, then seed
+    cur.execute("SELECT value FROM dataset_metadata WHERE key = 'dataset_hash'")
+    row = cur.fetchone()
+    stored_hash = row[0] if row else None
+
+    # Check if empty, or hash changed, or force_reload requested
     cur.execute("SELECT COUNT(*) FROM drugs")
     count = cur.fetchone()[0]
 
-    if count == 0:
-        actual_seed_path = seed_path or DEFAULT_SEED_PATH
+    needs_reload = force_reload or count == 0 or (stored_hash != current_hash and current_hash != "")
+
+    if needs_reload:
+        cur.execute("DELETE FROM drugs")
         if actual_seed_path.exists():
             with open(actual_seed_path, "r", encoding="utf-8") as f:
                 records = json.load(f)
@@ -79,6 +96,9 @@ def init_db(db_path: Optional[Path] = None, seed_path: Optional[Path] = None, fo
                     item["brand_name"].lower(),
                     item["molecule"].lower()
                 ))
+
+            cur.execute("INSERT OR REPLACE INTO dataset_metadata (key, value) VALUES ('dataset_hash', ?)", (current_hash,))
+            cur.execute("INSERT OR REPLACE INTO dataset_metadata (key, value) VALUES ('record_count', ?)", (str(len(records)),))
             conn.commit()
     conn.close()
 

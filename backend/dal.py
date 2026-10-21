@@ -80,10 +80,31 @@ def get_all_drugs(conn: Optional[sqlite3.Connection] = None) -> List[Dict[str, A
             conn.close()
 
 
-def calculate_compare(items: List[Dict[str, Any]], conn: Optional[sqlite3.Connection] = None) -> Dict[str, Any]:
+from functools import lru_cache
+
+
+@lru_cache(maxsize=512)
+def _cached_fuzzy_search(query: str, limit: int, dataset_hash: str) -> tuple:
+    from backend.search import fuzzy_search_drugs
+    drugs = get_all_drugs()
+    results = fuzzy_search_drugs(query=query, drugs=drugs, limit=limit)
+    return tuple(results)
+
+
+def search_drugs(query: str, limit: int = 3, conn: Optional[sqlite3.Connection] = None) -> List[Dict[str, Any]]:
     """
-    Given a list of items `[{"id": "...", "quantity": int}, ...]`,
-    calculates per-item savings and aggregated prescription savings.
+    Search drugs via the Data Access Layer, querying SQLite as the single source of truth.
+    Features an LRU query cache for sub-millisecond execution on repeated queries.
+    """
+    meta = get_dataset_metadata(conn=conn)
+    current_hash = meta.get("dataset_hash", "")
+    cached_res = _cached_fuzzy_search(query=query.strip(), limit=limit, dataset_hash=current_hash)
+    return [dict(item) for item in cached_res]
+
+
+def get_dataset_metadata(conn: Optional[sqlite3.Connection] = None) -> Dict[str, Any]:
+    """
+    Fetches dataset version, hash, and record count directly from SQLite metadata.
     """
     should_close = False
     if conn is None:
@@ -91,21 +112,59 @@ def calculate_compare(items: List[Dict[str, Any]], conn: Optional[sqlite3.Connec
         should_close = True
 
     try:
+        cur = conn.cursor()
+        cur.execute("SELECT key, value FROM dataset_metadata")
+        rows = cur.fetchall()
+        meta = {r["key"]: r["value"] for r in rows}
+        cur.execute("SELECT COUNT(*) FROM drugs")
+        meta["total_records"] = cur.fetchone()[0]
+        return meta
+    finally:
+        if should_close:
+            conn.close()
+
+
+def calculate_compare(items: List[Dict[str, Any]], conn: Optional[sqlite3.Connection] = None) -> Dict[str, Any]:
+    """
+    Calculates per-item savings and aggregated prescription savings.
+    Safely handles:
+    - Empty input list (returns 200 with 0 totals)
+    - Duplicate drug IDs (merges quantities)
+    - Unknown drug IDs (tracks in skipped_ids without crashing)
+    - Null or missing prices (defaults to 0.0)
+    """
+    should_close = False
+    if conn is None:
+        conn = get_db_connection()
+        should_close = True
+
+    try:
+        # 1. Deduplicate by summing quantities
+        merged_items: Dict[str, int] = {}
+        for item in (items or []):
+            drug_id = str(item.get("id", "")).strip()
+            if not drug_id:
+                continue
+            qty = max(1, int(item.get("quantity", 1)))
+            merged_items[drug_id] = merged_items.get(drug_id, 0) + qty
+
         breakdown = []
+        skipped_ids = []
         total_branded_cost = 0.0
         total_generic_cost = 0.0
         total_units = 0
 
-        for item in items:
-            drug_id = item.get("id")
-            quantity = max(1, int(item.get("quantity", 1)))
+        for drug_id, quantity in merged_items.items():
             drug = get_drug_by_id(drug_id, conn=conn)
-
             if not drug:
+                skipped_ids.append(drug_id)
                 continue
 
-            b_total = round(drug["branded_price"] * quantity, 2)
-            g_total = round(drug["generic_price"] * quantity, 2)
+            branded_price = float(drug.get("branded_price") or 0.0)
+            generic_price = float(drug.get("generic_price") or 0.0)
+
+            b_total = round(branded_price * quantity, 2)
+            g_total = round(generic_price * quantity, 2)
             item_savings = max(0.0, round(b_total - g_total, 2))
             item_pct = round((item_savings / b_total) * 100, 1) if b_total > 0 else 0.0
 
@@ -120,8 +179,8 @@ def calculate_compare(items: List[Dict[str, Any]], conn: Optional[sqlite3.Connec
                 "strength": drug["strength"],
                 "unit": drug["unit"],
                 "quantity": quantity,
-                "branded_unit_price": drug["branded_price"],
-                "generic_unit_price": drug["generic_price"],
+                "branded_unit_price": branded_price,
+                "generic_unit_price": generic_price,
                 "branded_total_price": b_total,
                 "generic_total_price": g_total,
                 "item_savings": item_savings,
@@ -130,7 +189,7 @@ def calculate_compare(items: List[Dict[str, Any]], conn: Optional[sqlite3.Connec
 
         total_branded_cost = round(total_branded_cost, 2)
         total_generic_cost = round(total_generic_cost, 2)
-        total_savings = max(0.0, round(total_branded_cost - total_generic_cost, 2))
+        total_savings = round(sum(it["item_savings"] for it in breakdown), 2)
         overall_pct = (
             round((total_savings / total_branded_cost) * 100, 1)
             if total_branded_cost > 0
@@ -145,7 +204,8 @@ def calculate_compare(items: List[Dict[str, Any]], conn: Optional[sqlite3.Connec
                 "total_generic_cost": total_generic_cost,
                 "total_savings": total_savings,
                 "overall_savings_percentage": overall_pct,
-                "currency": "INR"
+                "currency": "INR",
+                "skipped_ids": skipped_ids
             },
             "breakdown": breakdown,
             "disclaimer": STANDARD_DISCLAIMER
